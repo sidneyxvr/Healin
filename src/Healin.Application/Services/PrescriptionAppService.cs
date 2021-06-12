@@ -23,11 +23,13 @@ namespace Healin.Application.Services
     {
         private readonly IAppUser _appUser;
         private readonly IFileStorage _fileStorage;
+        private readonly IPatientRepository _patientRepository;
         private readonly IPrescriptionRepository _prescriptionRepository;
         private readonly IPrescriptionReadOnlyRepository _prescriptionReadOnlyRepository;
         public PrescriptionAppService(
             IAppUser appUser,
             IFileStorage fileStorage,
+            IPatientRepository patientRepository,
             IPrescriptionRepository prescriptionRepository,
             IPrescriptionReadOnlyRepository prescriptionReadOnlyRepository,
             INotifier notifier, 
@@ -35,6 +37,7 @@ namespace Healin.Application.Services
         {
             _appUser = appUser;
             _fileStorage = fileStorage;
+            _patientRepository = patientRepository;
             _prescriptionRepository = prescriptionRepository;
             _prescriptionReadOnlyRepository = prescriptionReadOnlyRepository;
         }
@@ -79,6 +82,26 @@ namespace Healin.Application.Services
             var prescriptions = await _prescriptionReadOnlyRepository.GetPagedByPatientAsync(_appUser.UserId, page, pageSize, search, filter, order);
 
             return new PagedListDTO<PrescriptionResponse> (
+                Mapper.Map<ICollection<PrescriptionResponse>>(prescriptions.Collection),
+                prescriptions.Amount
+            );
+        }
+
+        public async Task<PagedListDTO<PrescriptionResponse>> GetPagedByPatientIdAsync(Guid patientId, 
+            int page = 1, int pageSize = 10, string search = "", string filter = "", string order = "")
+        {
+            var doctorId = _appUser.UserId;
+
+            var patient = await _patientRepository.GetByIdAsync(patientId, nameof(Patient.Doctors));
+
+            if (patient.Doctors.All(d => d.Id != doctorId))
+            {
+                return new PagedListDTO<PrescriptionResponse>(new List<PrescriptionResponse>(), 0);
+            }
+
+            var prescriptions = await _prescriptionReadOnlyRepository.GetPagedByPatientAsync(patientId, page, pageSize, search, filter, order);
+
+            return new PagedListDTO<PrescriptionResponse>(
                 Mapper.Map<ICollection<PrescriptionResponse>>(prescriptions.Collection),
                 prescriptions.Amount
             );

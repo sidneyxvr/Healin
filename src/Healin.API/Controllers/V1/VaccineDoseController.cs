@@ -38,7 +38,13 @@ namespace Healin.API.Controllers.V1
         [HttpGet]
         public async Task<IActionResult> Get()
         {
-            return CustomResponse(await _vaccineDoseService.GetByPatientIdAsync(UserId));
+            return CustomResponse(await _vaccineDoseService.GetByLoggedPatientAsync());
+        }
+
+        [HttpGet("patient/{patientId}")]
+        public async Task<IActionResult> GetByPatientId(Guid patientId)
+        {
+            return CustomResponse(await _vaccineDoseService.GetByPatientIdAsync(patientId));
         }
 
         [HttpDelete("{id}")]

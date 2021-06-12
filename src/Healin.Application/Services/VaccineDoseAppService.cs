@@ -19,17 +19,20 @@ namespace Healin.Application.Services
     public class VaccineDoseAppService : BaseAppService, IVaccineDoseService
     {
         private readonly IAppUser _appUser;
+        private readonly IPatientRepository _patientRepository;
         private readonly IVaccineDoseRepository _vaccineCardRepository;
         private readonly IVaccineDoseReadOnlyRepository _vaccineCardReadOnlyRepository;
         public VaccineDoseAppService(
+            IPatientRepository patientRepository,
             IVaccineDoseRepository vaccineCardRepository, 
             IVaccineDoseReadOnlyRepository vaccineCardReadOnlyRepository, 
             INotifier notifier, IAppUser appUser,
             IMapper mapper) : base(notifier, mapper)
         {
-            _vaccineCardReadOnlyRepository = vaccineCardReadOnlyRepository;
-            _vaccineCardRepository = vaccineCardRepository;
             _appUser = appUser;
+            _patientRepository = patientRepository;
+            _vaccineCardRepository = vaccineCardRepository;
+            _vaccineCardReadOnlyRepository = vaccineCardReadOnlyRepository;
         }
 
         public async Task AddAsync(VaccineDoseRequest vaccineDoseRequest)
@@ -65,8 +68,27 @@ namespace Healin.Application.Services
                 }));
         }
 
+        public async Task<IEnumerable<(string VaccineName, List<VaccineDoseResponse> VaccineDoses)>> GetByLoggedPatientAsync()
+        {
+            var patientId = _appUser.UserId;
+
+            return Mapper.Map<IEnumerable<VaccineDoseResponse>>(await _vaccineCardReadOnlyRepository.GetByPatientIdAsync(patientId))
+                .GroupBy(vaccineDose => vaccineDose.Vaccine.Name)
+                .Select(a => (VaccineName: a.Key, VaccineDoses: a.OrderBy(vaccine => vaccine.DoseType).ToList()))
+                .OrderBy(vaccineDose => vaccineDose.VaccineName);
+        }
+
         public async Task<IEnumerable<(string VaccineName, List<VaccineDoseResponse> VaccineDoses)>> GetByPatientIdAsync(Guid patientId)
         {
+            var doctorId = _appUser.UserId;
+
+            var patient = await _patientRepository.GetByIdAsync(patientId, nameof(Patient.Doctors));
+
+            if (patient.Doctors.All(d => d.Id != doctorId))
+            {
+                return new List<(string VaccineName, List<VaccineDoseResponse> VaccineDoses)>();
+            }
+
             return Mapper.Map<IEnumerable<VaccineDoseResponse>>(await _vaccineCardReadOnlyRepository.GetByPatientIdAsync(patientId))
                 .GroupBy(vaccineDose => vaccineDose.Vaccine.Name)
                 .Select(a => (VaccineName: a.Key, VaccineDoses: a.OrderBy(vaccine => vaccine.DoseType).ToList()))

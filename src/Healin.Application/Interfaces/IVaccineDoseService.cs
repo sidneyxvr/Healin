@@ -12,6 +12,7 @@ namespace Healin.Application.Interfaces
         Task RemoveAsync(Guid id);
 
         Task<IEnumerable<SelectItem<string>>> GetDoseTypesAsync();
+        Task<IEnumerable<(string VaccineName, List<VaccineDoseResponse> VaccineDoses)>> GetByLoggedPatientAsync();
         Task<IEnumerable<(string VaccineName, List<VaccineDoseResponse> VaccineDoses)>> GetByPatientIdAsync(Guid patientId);
     }
 }

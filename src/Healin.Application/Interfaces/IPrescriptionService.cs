@@ -16,6 +16,8 @@ namespace Healin.Application.Interfaces
 
         Task<PagedListDTO<PrescriptionResponse>> GetPagedAsync(int page = 1,
             int pageSize = 10, string search = "", string filter = "", string order = "");
+        Task<PagedListDTO<PrescriptionResponse>> GetPagedByPatientIdAsync(Guid patientId,
+            int page = 1, int pageSize = 10, string search = "", string filter = "", string order = "");
         Task<PrescriptionResponse> GetByIdAsync(Guid id);
         Task<IEnumerable<SelectItem<string>>> GetPrescriptionTypesAsync();
     }

@@ -39,6 +39,13 @@ namespace Healin.API.Controllers.V1
             return CustomResponse(await _prescriptionService.GetPagedAsync(page, pageSize, search, filter, order));
         }
 
+        [HttpGet("paged-by-patient/{patientId}")]
+        public async Task<IActionResult> GetPaged(Guid patientId, int page = 1,
+           int pageSize = 10, string search = "", string filter = "", string order = "")
+        {
+            return CustomResponse(await _prescriptionService.GetPagedByPatientIdAsync(patientId, page, pageSize, search, filter, order));
+        }
+
         [HttpGet("{id}")]
         public async Task<IActionResult> GetById(Guid id)
         {
